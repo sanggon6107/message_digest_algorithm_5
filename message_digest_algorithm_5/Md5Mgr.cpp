@@ -1,15 +1,8 @@
-#include <windows.h>
-#include <Wincrypt.h>
-#include <iostream>
-#include <string>
-#include <atlstr.h>
+#include "Md5Mgr.h"
 
 using namespace std;
 
-#define BUFSIZE 1024
-#define MD5LEN  16
-
-DWORD MessageDigestAlgorithm5(LPCWSTR file_path, string& out)
+DWORD Md5Mgr::CreateMd5(LPCWSTR file_path, string& out)
 {
     USES_CONVERSION;
 
@@ -25,8 +18,6 @@ DWORD MessageDigestAlgorithm5(LPCWSTR file_path, string& out)
     CHAR rgbDigits[] = "0123456789abcdef";
 
     CHAR md5_temp[33];
-    
-    // Logic to check usage goes here.
 
     hFile = CreateFile(file_path,
         GENERIC_READ,
@@ -78,7 +69,7 @@ DWORD MessageDigestAlgorithm5(LPCWSTR file_path, string& out)
         if (!CryptHashData(hHash, rgbFile, cbRead, 0))
         {
             dwStatus = GetLastError();
-            
+
             cout << "CryptHashData failed: " << dwStatus << endl;
             CryptReleaseContext(hProv, 0);
             CryptDestroyHash(hHash);
@@ -98,21 +89,21 @@ DWORD MessageDigestAlgorithm5(LPCWSTR file_path, string& out)
     }
 
     cbHash = MD5LEN;
-    if (CryptGetHashParam(hHash, HP_HASHVAL, rgbHash, &cbHash, 0))
-    {   
-        
-        for (DWORD i = 0; i < cbHash; i++)
-        {
-            sprintf_s(md5_temp + 2 * i, sizeof(md5_temp) - 2 * i, "%c%c",
-            rgbDigits[rgbHash[i] >> 4], rgbDigits[rgbHash[i] & 0xf]);
-        }
-        out = md5_temp;
-    }
-    else
+    if (!CryptGetHashParam(hHash, HP_HASHVAL, rgbHash, &cbHash, 0))
     {
         dwStatus = GetLastError();
         cout << "CryptGetHashParam failed: " << dwStatus << endl;
+        CryptDestroyHash(hHash);
+        CryptReleaseContext(hProv, 0);
+        CloseHandle(hFile);
     }
+
+    for (DWORD i = 0; i < cbHash; i++)
+    {
+        sprintf_s(md5_temp + 2 * i, sizeof(md5_temp) - 2 * i, "%c%c",
+            rgbDigits[rgbHash[i] >> 4], rgbDigits[rgbHash[i] & 0xf]);
+    }
+    out = md5_temp;
 
     CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);
@@ -121,14 +112,17 @@ DWORD MessageDigestAlgorithm5(LPCWSTR file_path, string& out)
     return dwStatus;
 }
 
-int main()
+int Md5Mgr::CheckMd5(string& md5_file_path, string& file_path)
 {
-    string out;
-    DWORD ret = MessageDigestAlgorithm5(L"example.txt", out);
-    if (!ret)
+    string md5_live{};
+    wstring file_path_w;
+    file_path_w.assign(file_path.begin(), file_path.end());
+    DWORD ret = CreateMd5(file_path_w.c_str(), md5_live);
+    if (ret)
     {
-        cout << out << endl;
+        cout << "Failed to Create MD5" << endl;
+        return 2; // 2 : Fail to Create MD5
     }
     
-    return 0;
+    return static_cast<int>(Result::kSuccess);
 }

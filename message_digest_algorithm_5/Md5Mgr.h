@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <atlstr.h>
+#include <fstream>
 
 using namespace std;
 
@@ -15,18 +16,20 @@ enum class Result : int {kSuccess = 0, kFail = 1};
 
 class Md5Mgr
 {
-public :
+public:
     int CheckMd5(string& md5_file_path, string& file_path);
-    
-private :
-    Md5Mgr() {};
     static Md5Mgr& GetInstance()
     {
         static Md5Mgr instance;
         return instance;
     }
+
+private :
+    Md5Mgr() {};
+
     Md5Mgr(const Md5Mgr& md5_mgr) = delete;
     void operator=(const Md5Mgr&) = delete;
 
     DWORD CreateMd5(LPCWSTR file_path, string& out);
+
 };

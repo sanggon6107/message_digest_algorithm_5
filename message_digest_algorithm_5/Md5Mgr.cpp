@@ -117,6 +117,10 @@ int Md5Mgr::CheckMd5(string& md5_file_path, string& file_path)
     string md5_live{};
     wstring file_path_w;
     file_path_w.assign(file_path.begin(), file_path.end());
+    ifstream md5_file;
+    string md5_file_hash;
+    
+    // Get Live Md5 hash from a file.
     DWORD ret = CreateMd5(file_path_w.c_str(), md5_live);
     if (ret)
     {
@@ -124,5 +128,15 @@ int Md5Mgr::CheckMd5(string& md5_file_path, string& file_path)
         return 2; // 2 : Fail to Create MD5
     }
     
-    return static_cast<int>(Result::kSuccess);
+    // Get md5 hash from a *.md5 file.
+    md5_file.open(md5_file_path);
+    if (!getline(md5_file, md5_file_hash))
+    {
+        cout << "Failed to get MD5 hash from a *.md5 file" << endl;
+        return 3; // 3 : Fail to Get hash from a *.md5 file
+    }
+
+    md5_file.close();
+
+    return (md5_file_hash == md5_live)? static_cast<int>(Result::kSuccess) : static_cast<int>(Result::kFail);
 }

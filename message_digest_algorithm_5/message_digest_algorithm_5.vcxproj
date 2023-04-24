@@ -141,7 +141,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="md5.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Md5Mgr.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Md5Mgr.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

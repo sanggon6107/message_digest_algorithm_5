@@ -3,8 +3,9 @@
 #include <Wincrypt.h>
 #include <iostream>
 #include <string>
-#include <atlstr.h>
 #include <fstream>
+#include <functional>
+#include <atlstr.h>
 
 using namespace std;
 
@@ -23,13 +24,12 @@ public:
         static Md5Mgr instance;
         return instance;
     }
-
+    
 private :
     Md5Mgr() {};
 
     Md5Mgr(const Md5Mgr& md5_mgr) = delete;
     void operator=(const Md5Mgr&) = delete;
-
-    DWORD CreateMd5(LPCWSTR file_path, string& out);
+    DWORD CreateMd5(string& file_path_str, string& out);
 
 };

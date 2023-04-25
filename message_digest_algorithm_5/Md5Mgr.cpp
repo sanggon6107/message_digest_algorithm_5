@@ -2,10 +2,8 @@
 
 using namespace std;
 
-DWORD Md5Mgr::CreateMd5(LPCWSTR file_path, string& out)
+DWORD Md5Mgr::CreateMd5(string& file_path_str, string& out)
 {
-    USES_CONVERSION;
-
     DWORD dwStatus = 0;
     BOOL bResult = FALSE;
     HCRYPTPROV hProv = 0;
@@ -16,10 +14,12 @@ DWORD Md5Mgr::CreateMd5(LPCWSTR file_path, string& out)
     BYTE rgbHash[MD5LEN];
     DWORD cbHash = 0;
     CHAR rgbDigits[] = "0123456789abcdef";
+    CString file_path_cstr(file_path_str.c_str());
+    
 
     CHAR md5_temp[33];
 
-    hFile = CreateFile(file_path,
+    hFile = CreateFile((LPCWSTR)file_path_cstr, //file_path_wstr.c_str()
         GENERIC_READ,
         FILE_SHARE_READ,
         NULL,
@@ -31,7 +31,7 @@ DWORD Md5Mgr::CreateMd5(LPCWSTR file_path, string& out)
     if (INVALID_HANDLE_VALUE == hFile)
     {
         dwStatus = GetLastError();
-        cout << "Error opening file : " << CW2A(file_path) << endl
+        cout << "Error opening file : " << file_path_str << endl
             << "Error : " << dwStatus << endl;
         return dwStatus;
     }
@@ -115,13 +115,11 @@ DWORD Md5Mgr::CreateMd5(LPCWSTR file_path, string& out)
 int Md5Mgr::CheckMd5(string& md5_file_path, string& file_path)
 {
     string md5_live{};
-    wstring file_path_w;
-    file_path_w.assign(file_path.begin(), file_path.end());
     ifstream md5_file;
     string md5_file_hash;
     
     // Get Live Md5 hash from a file.
-    DWORD ret = CreateMd5(file_path_w.c_str(), md5_live);
+    DWORD ret = CreateMd5(file_path , md5_live);
     if (ret)
     {
         cout << "Failed to Create MD5" << endl;

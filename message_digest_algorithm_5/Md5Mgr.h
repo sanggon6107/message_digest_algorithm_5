@@ -24,7 +24,7 @@ public:
         static Md5Mgr instance;
         return instance;
     }
-    
+
 private :
     Md5Mgr() {};
 
@@ -32,4 +32,20 @@ private :
     void operator=(const Md5Mgr&) = delete;
     DWORD CreateMd5(string& file_path_str, string& out);
 
+};
+
+class Raii
+{
+    using func = function<void(void)>;
+public:
+    Raii(func init, func dest) : dest_(dest)
+    {
+        init();
+    }
+
+    ~Raii()
+    {
+        dest_();
+    }
+    func dest_;
 };

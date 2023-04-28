@@ -4,16 +4,16 @@ using namespace std;
 
 DWORD Md5Mgr::CreateMd5(string& file_path_str, string& out)
 {
-    DWORD dwStatus = 0;
-    BOOL bResult = FALSE;
-    HCRYPTPROV hProv = 0;
-    HCRYPTHASH hHash = 0;
-    HANDLE hFile = NULL;
-    BYTE rgbFile[BUFSIZE];
-    DWORD cbRead = 0;
-    BYTE rgbHash[MD5LEN];
-    DWORD cbHash = 0;
-    CHAR rgbDigits[] = "0123456789abcdef";
+    DWORD dw_status = 0;
+    BOOL result = FALSE;
+    HCRYPTPROV prov = 0;
+    HCRYPTHASH hash = 0;
+    HANDLE file = NULL;
+    BYTE rgb_file[BUFSIZE];
+    DWORD cb_read = 0;
+    BYTE rgb_hash[MD5LEN];
+    DWORD cb_hash = 0;
+    CHAR rgb_digits[] = "0123456789abcdef";
     CString file_path_cstr(file_path_str.c_str());
     BOOL local_ret;
 
@@ -21,7 +21,7 @@ DWORD Md5Mgr::CreateMd5(string& file_path_str, string& out)
 
     Raii raii_create_file(
         [&]() {
-            hFile = CreateFile((LPCWSTR)file_path_cstr, //file_path_wstr.c_str()
+            file = CreateFile((LPCWSTR)file_path_cstr, //file_path_wstr.c_str()
                 GENERIC_READ,
                 FILE_SHARE_READ,
                 NULL,
@@ -31,91 +31,91 @@ DWORD Md5Mgr::CreateMd5(string& file_path_str, string& out)
 
         },
         [&]() {
-            CloseHandle(hFile);
+            CloseHandle(file);
         }
     );
-    if (INVALID_HANDLE_VALUE == hFile)
+    if (INVALID_HANDLE_VALUE == file)
     {
-        dwStatus = GetLastError();
+        dw_status = GetLastError();
         cout << "Error opening file : " << file_path_str << endl
-            << "Error : " << dwStatus << endl;
-        return dwStatus;
+            << "Error : " << dw_status << endl;
+        return dw_status;
     }
 
     // Get handle to the crypto provider
     Raii raii_crypt_acquire_context(
         [&]() {
-            local_ret = CryptAcquireContext(&hProv,
+            local_ret = CryptAcquireContext(&prov,
                 NULL,
                 NULL,
                 PROV_RSA_FULL,
                 CRYPT_VERIFYCONTEXT);
         },
         [&]() {
-            CryptReleaseContext(hProv, 0);
+            CryptReleaseContext(prov, 0);
         }
     );
     if (!local_ret)
     {
-        dwStatus = GetLastError();
-        cout << "CryptAcquireContext failed: " << dwStatus << endl;
-        return dwStatus;
+        dw_status = GetLastError();
+        cout << "CryptAcquireContext failed: " << dw_status << endl;
+        return dw_status;
     }
 
     Raii raii_crypt_create_hash(
         [&]() {
-            CryptCreateHash(hProv, CALG_MD5, 0, 0, &hHash);
+            CryptCreateHash(prov, CALG_MD5, 0, 0, &hash);
         },
         [&]() {
-            CryptDestroyHash(hHash);
+            CryptDestroyHash(hash);
         }
     );
     
     if (!local_ret)
     {
-        dwStatus = GetLastError();
-        cout << "CryptAcquireContext failed: " << dwStatus << endl;
-        return dwStatus;
+        dw_status = GetLastError();
+        cout << "CryptAcquireContext failed: " << dw_status << endl;
+        return dw_status;
     }
 
-    while (bResult = ReadFile(hFile, rgbFile, BUFSIZE,
-        &cbRead, NULL))
+    while (result = ReadFile(file, rgb_file, BUFSIZE,
+        &cb_read, NULL))
     {
-        if (0 == cbRead)
+        if (0 == cb_read)
         {
             break;
         }
 
-        if (!CryptHashData(hHash, rgbFile, cbRead, 0))
+        if (!CryptHashData(hash, rgb_file, cb_read, 0))
         {
-            dwStatus = GetLastError();
-            cout << "CryptHashData failed: " << dwStatus << endl;
-            return dwStatus;
+            dw_status = GetLastError();
+            cout << "CryptHashData failed: " << dw_status << endl;
+            return dw_status;
         }
     }
 
-    if (!bResult)
+    if (!result)
     {
-        dwStatus = GetLastError();
-        cout << "ReadFile failed : % " << dwStatus << endl;
-        return dwStatus;
+        dw_status = GetLastError();
+        cout << "ReadFile failed : % " << dw_status << endl;
+        return dw_status;
     }
 
-    cbHash = MD5LEN;
-    if (!CryptGetHashParam(hHash, HP_HASHVAL, rgbHash, &cbHash, 0))
+    cb_hash = MD5LEN;
+    if (!CryptGetHashParam(hash, HP_HASHVAL, rgb_hash, &cb_hash, 0))
     {
-        dwStatus = GetLastError();
-        cout << "CryptGetHashParam failed: " << dwStatus << endl;
+        dw_status = GetLastError();
+        cout << "CryptGetHashParam failed: " << dw_status << endl;
     }
 
-    for (DWORD i = 0; i < cbHash; i++)
+    for (DWORD i = 0; i < cb_hash; i++)
     {
         sprintf_s(md5_temp + 2 * i, sizeof(md5_temp) - 2 * i, "%c%c",
-            rgbDigits[rgbHash[i] >> 4], rgbDigits[rgbHash[i] & 0xf]);
+            rgb_digits[rgb_hash[i] >> 4], rgb_digits[rgb_hash[i] & 0xf]);
     }
     out = md5_temp;
 
-    return dwStatus;
+    return dw_status;
 }
 
 int Md5Mgr::CheckMd5(string& md5_file_path, string& file_path)
